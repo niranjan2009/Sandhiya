@@ -435,7 +435,58 @@ body.heart-ready #animationCanvas {
 /* ===========================
    Mobile & Large Screens
 =========================== */
+@media(max-width: 900px) 
+/* ===========================
+   Mobile & Small Screens
+=========================== */
 @media(max-width: 900px) {
+    /* Shrinks the entire envelope layout proportionally */
+    .envelope-wrapper {
+        transform: scale(0.55); 
+    }
+    
+    /* Slightly bigger when opened */
+    .envelope-wrapper.open {
+        transform: scale(0.65); 
+    }
+    
+    /* Forces the read-mode letter to fit the mobile screen perfectly */
+    body.read-mode .letter {
+        width: 90vw !important;
+        height: 85vh !important;
+        padding: 40px 25px !important;
+    }
+    
+    .letter h1 {
+        font-size: 32px;
+    }
+    
+    .letter-text {
+        font-size: 14px;
+        line-height: 1.8;
+    }
+    
+    .seal {
+        width: 150px !important; 
+    }
+
+    /* Fixes the final "Do you love me?" pop-up for mobile */
+    #loveQuestion {
+        width: 90vw;
+        padding: 30px 20px;
+    }
+    
+    .question-buttons {
+        flex-direction: column; /* Stacks the buttons vertically */
+        gap: 15px;
+        height: auto;
+    }
+    
+    #btnNo {
+        position: static; /* Stops the No button from overlapping the Yes button */
+    }
+}
+{
     .letter {
         width: 78vw;
         height: 50vw;
