@@ -63,12 +63,70 @@ letter.addEventListener("scroll", () => {
 const preload = ["assets/background.jpg", "assets/envelope-bottom.png", "assets/envelope-flap.png", "assets/paper.png", "assets/wax-seal.png", "assets/petal.png"];
 preload.forEach(src => { const img = new Image(); img.src = src; });
 
-window.addEventListener("load", () => {
-    wrapper.animate([
-        { transform: "translateY(50px)", opacity: 0 },
-        { transform: "translateY(0)", opacity: 1 }
-    ], { duration: 1200, easing: "ease-out" });
+/* =========================================================
+   ABSOLUTE ASSET PRE-LOADER (Waits for Audio & Images)
+========================================================= */
+const assetsToLoad = [
+    "assets/background.jpg",
+    "assets/envelope-bottom.png",
+    "assets/envelope-flap.png",
+    "assets/paper.png",
+    "assets/wax-seal.png",
+    "assets/petal.png",
+    "assets/music.mp3",
+    "assets/seal-break.mp3",
+    "assets/open.mp3",
+    "assets/heart-music.mp3",
+    "assets/countdown.mp3"
+];
+
+let loadedCount = 0;
+const preloader = document.getElementById("preloader");
+
+function assetLoaded() {
+    loadedCount++;
+    // When all files are successfully loaded
+    if (loadedCount >= assetsToLoad.length) {
+        startExperience();
+    }
+}
+
+function startExperience() {
+    setTimeout(() => {
+        preloader.style.opacity = "0"; // Fade out
+        setTimeout(() => {
+            preloader.style.display = "none"; // Remove from screen
+            wrapper.animate([
+                { transform: "translateY(50px)", opacity: 0 },
+                { transform: "translateY(0)", opacity: 1 }
+            ], { duration: 1200, easing: "ease-out" });
+        }, 1000);
+    }, 1000);
+}
+
+// Loop through the list and force the browser to load them
+assetsToLoad.forEach(src => {
+    if (src.endsWith(".mp3")) {
+        const audio = new Audio();
+        audio.src = src;
+        audio.addEventListener("canplaythrough", assetLoaded, { once: true });
+        audio.load();
+    } else {
+        const img = new Image();
+        img.src = src;
+        img.onload = assetLoaded;
+        img.onerror = assetLoaded; // Prevents getting stuck if a file fails
+    }
 });
+
+// SAFETY FALLBACK: Mobile browsers sometimes block background audio loading to save data.
+// If 6 seconds pass and it's still loading, we force it to open anyway so she doesn't get stuck.
+setTimeout(() => {
+    if (loadedCount < assetsToLoad.length) {
+        loadedCount = assetsToLoad.length;
+        startExperience();
+    }
+}, 6000);
 
 wrapper.addEventListener("touchstart", openEnvelope);
 
