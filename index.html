@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To My Dear Sandhiya 💝</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Great+Vibes&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Background Overlay -->
+    <div class="overlay"></div>
+    
+    <!-- Floating Particles -->
+    <div id="particles"></div>
+    
+    <!-- Falling Rose Petals -->
+    <div id="petals"></div>
+    
+    <!-- Main Container -->
+    <div class="container">
+        
+        <!-- Envelope Wrapper -->
+        <div class="envelope-wrapper" id="envelopeWrapper">
+            <!-- Envelope -->
+            <div class="envelope">
+                
+                <!-- Instruction 1: Above Wax Seal -->
+                <div class="envelope-hint">(Tap Here)</div>
+
+                <!-- Bottom Part -->
+                <img src="assets/envelope-bottom.png" class="envelope-bottom" alt="Envelope">
+                
+                <!-- Letter -->
+                <div class="letter" id="letter">
+                    <div class="letter-content">
+                        <h1>To My Dear Sandhiya 🩷</h1>
+                        <h3>From Niranjan,</h3>
+                        <div class="letter-text">
+                            <p>
+                                Hey Sandhiya, <br>
+                                I want to tell you something honestly from my heart. <br> <br>
+                                I have known you since 6th Standard (VI - F), when I joined Jayam as a new student.From the first time I saw you, I felt something very special. Over the years, that feeling stayed with me and slowly became deeper.I have admired you for a long time -- <br> <br>
+                                Even when we were in different sections from 9th onwards, I always noticed you whenever I got the chance & Really missed you! <br> <br>
+                                I still remember many small moments clearly like ~ you played on (P.T) hours, Your role as spoken Leader on 6th, You always spoke english only and other moments they are all special to me. <br> <br>
+                                When I felt that I was missing you,I watch your interview on YouTube just to see you again. <br> <br>
+                                By 12th standard, everything I felt for you had grown deeper! I used to look for you in every break,lunch hour and During 5'O clock Break hour, Before getting bus because seeing you made my day feel better. Some Sundays, I'd catch a glimpse of you from my bus window to you. <br> <br>
+                                I think, somewhere along the way, you noticed me! <br> <br>
+                                Then, at college when I started messaging and talking you, I felt something special and excited to talk to you. And now, You Became my part of life - My Great Soulmate forever !!! <br> <br>
+                                I don't think I can wait any longer to say this. <br> <br>
+                                I like you from my 6th... And If you'll have me, I hope you'll be my first and last love. At this stage of my life, I truly feel that you are someone very special to my heart.
+                                </p>
+                                <h1>I LOVE YOU, SANDHIYA🩷</h1> <br>
+
+                                <p></p> <br>
+    
+                        </div>
+                        
+                        <!-- Instruction 2: Appears below text when finished typing -->
+                        <div id="scrollHint" class="scroll-hint">(Scroll Down)</div>
+
+                        <!-- Next Arrow -->
+                        <div id="nextArrow" title="Next Page">&#10140;</div>
+                    </div>
+                </div>
+                
+                <!-- Envelope Flap -->
+                <img src="assets/envelope-flap.png" class="flap" id="flap" alt="">
+                
+                <!-- Wax Seal -->
+                <img src="assets/wax-seal.png" class="seal" id="seal" alt="Wax Seal">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Particle Animation Canvas -->
+    <canvas id="animationCanvas"></canvas>
+
+    <!-- ========================================== -->
+    <!-- NEW: WATERMARK -->
+    <div id="watermark">© Made by Niranjan</div>
+    <!-- ========================================== -->
+
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="assets/music.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="assets/music.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- Seal Break Sound -->
+    <audio id="sealSound">
+        <source src="assets/seal-break.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- Envelope Open Sound -->
+    <audio id="openSound">
+        <source src="assets/open.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="heartMusic" loop>
+        <source src="assets/heart-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Countdown Music -->
+<audio id="countdownMusic">
+  <source src="assets/countdown.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ========================================== -->
+    <!-- NEW: DO YOU LOVE ME POP-UP -->
+    <!-- ========================================== -->
+    <div id="loveQuestion">
+        <!-- Put your drafted question here -->
+        <h2>Do you love me?</h2>
+        <div class="question-buttons">
+            <button id="btnYes">Yes! 🩷</button>
+            <button id="btnNo">No</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

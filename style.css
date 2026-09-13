@@ -1,0 +1,590 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Great+Vibes&family=Poppins:wght@300;400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    background: url("assets/background.jpg") center center/cover no-repeat;
+    position: relative;
+    animation: fadeIn 2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+::selection {
+    background: #b61d4a;
+    color: white;
+}
+
+.container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 5;
+}
+
+.envelope-wrapper {
+    position: relative;
+    width: 640px;
+    height: 450px;
+    transition: 1s ease;
+    cursor: pointer;
+    perspective: 1800px;
+}
+
+.envelope-wrapper:hover {
+    filter: drop-shadow(0 15px 30px rgba(255,180,180,.35));
+}
+
+.envelope {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.8s ease;
+    animation: floating 5s ease-in-out infinite;
+}
+
+.envelope::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(rgba(255,220,180,.25), transparent 70%);
+    filter: blur(40px);
+    z-index: -1;
+}
+
+/* =========================================================
+   INSTRUCTION 1: ENVELOPE HINT
+========================================================= */
+.envelope-hint {
+    position: absolute;
+    left: 50%;
+    top: 185px; /* Moved higher above the wax seal */
+    transform: translateX(-50%);
+    color: rgba(120, 120, 120, 0.9); /* Increased opacity for better visibility */
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    z-index: 25;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+/* Hide envelope hint once opened */
+.envelope-wrapper.open .envelope-hint {
+    opacity: 0;
+}
+
+.envelope-bottom {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    object-fit: contain;
+    z-index: 5;
+    user-select: none;
+    pointer-events: none;
+}
+
+.flap {
+    position: absolute;
+    width: 147.5%;
+    height: 125%;
+    bottom: 100%;
+    left: -23.7%;
+    transform-origin: bottom center;
+    transform-style: preserve-3d;
+    transform: translateY(-135px) rotateX(180deg);
+    z-index: 10;
+    transition: transform 1.3s ease, z-index 0s 0.6s;
+}
+
+.envelope-wrapper.open .flap {
+    transform: rotateX(0deg);
+    z-index: 0;
+}
+
+.seal {
+    position: absolute;
+    width: 250px !important;
+    height: auto !important;
+    left: 50%;
+    top: 270px;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    transition: .6s;
+}
+
+.envelope-wrapper.open .seal {
+    opacity: 0;
+    transform: translate(-50%,-50%) scale(.4) rotate(120deg);
+}
+
+.letter {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    top: auto;
+    transform: translateX(-50%) translateY(0);
+    width: 510px;
+    height: 420px;
+    background: url("assets/paper.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 70px 60px;
+    border-radius: 12px;
+    overflow-y: auto;
+    z-index: 1;
+    transition: transform 2s ease .7s, height 2s ease .7s, box-shadow 1s;
+    box-shadow: 0 15px 40px rgba(0,0,0,.35), 0 0 50px rgba(255,255,255,.08);
+    scrollbar-width: thin;
+    scrollbar-color: #9f6d48 #eadcc7;
+}
+
+.envelope-wrapper.open .letter {
+    height: 700px;
+    transform: translateX(-50%) translateY(-520px);
+}
+
+.letter-content {
+    width: 100%;
+    min-height: 100%;
+    opacity: 0;
+    transition: 1.5s;
+    display: flex;
+    flex-direction: column;
+}
+
+.envelope-wrapper.open .letter-content {
+    opacity: 1;
+}
+
+.letter h1 {
+    font-family: 'Great Vibes', cursive;
+    text-align: center;
+    color: #8b0000;
+    font-size: 54px;
+    margin-bottom: 30px;
+}
+
+.letter h3 {
+    font-family: 'Cinzel', serif;
+    color: #5d1d1d;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+}
+
+.letter-text {
+    color: #3d2c22;
+    font-size: 18px;
+    line-height: 2;
+    text-align: justify;
+}
+
+.letter p {
+    margin-bottom: 24px;
+}
+
+/* Add these lines below to style your new headings! */
+.letter-text h2, 
+.letter-text h3 {
+    font-family: 'Cinzel', serif;
+    color: #8b0000;
+    text-align: center;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+/* =========================================================
+   INSTRUCTION 2: SCROLL DOWN HINT
+========================================================= */
+.scroll-hint {
+    text-align: center;
+    color: rgba(120, 90, 70, 0.9); /* Increased opacity for better visibility */
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+.scroll-hint.show {
+    opacity: 1;
+    animation: pulseHint 2s infinite;
+}
+
+@keyframes pulseHint {
+    0%, 100% { opacity: 0.6; } /* Stronger baseline opacity */
+    50% { opacity: 1; }        /* Full opacity at peak */
+}
+
+.letter::-webkit-scrollbar {
+    width: 10px;
+}
+
+.letter::-webkit-scrollbar-track {
+    background: #ead7bf;
+}
+
+.letter::-webkit-scrollbar-thumb {
+    background: #9d5d4b;
+    border-radius: 20px;
+}
+
+#particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#petals {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.envelope-wrapper.open {
+    transform: scale(1.15);
+}
+
+@keyframes floating {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
+
+.petal {
+    position: absolute;
+    width: 35px;
+    pointer-events: none;
+    animation: fall linear forwards;
+}
+
+@keyframes fall {
+    0% { transform: translateY(-120px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: white;
+    opacity: .7;
+    animation: particleMove linear infinite;
+}
+
+@keyframes particleMove {
+    0% { transform: translateY(40px); opacity: 0; }
+    40% { opacity: .8; }
+    100% { transform: translateY(-120vh); opacity: 0; }
+}
+
+.final-message {
+    opacity: 0;
+    transition: 1.5s;
+    text-align: center;
+    font-family: 'Great Vibes', cursive;
+    font-size: 55px;
+    color: #9d1434;
+    margin-top: 40px;
+}
+
+.final-message.show {
+    opacity: 1;
+}
+
+/* =========================================================
+   FULL SCREEN READ MODE
+========================================================= */
+
+body.read-mode .envelope-bottom,
+body.read-mode .flap,
+body.read-mode .seal,
+body.read-mode .envelope::before {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 1s ease !important;
+}
+
+body.read-mode .envelope-wrapper {
+    pointer-events: none !important; 
+    cursor: default !important;
+}
+
+body.read-mode .letter {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+    width: 90vw !important;
+    max-width: 800px !important;
+    height: 90vh !important;
+    z-index: 999 !important;
+    box-shadow: 0 0 100px rgba(0,0,0,0.8) !important;
+    transition: all 1.5s ease-in-out !important;
+    padding: 60px 50px !important;
+    pointer-events: auto !important;
+}
+
+/* =========================================================
+   ARROW AND PARTICLE CANVAS TRANSITION
+========================================================= */
+
+#nextArrow {
+    display: block;
+    text-align: center;
+    margin: 20px auto 10px auto;
+    font-size: 45px;
+    color: #9d1434;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+}
+
+#nextArrow.show {
+    opacity: 1;
+    pointer-events: auto;
+    animation: bounceDown 1.5s infinite;
+}
+
+@keyframes bounceDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(12px); }
+}
+
+#animationCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease-in-out;
+    background-color: #1a1a1c; 
+    display: block;
+}
+
+body.particle-mode #animationCanvas {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.particle-mode .container,
+body.particle-mode #particles,
+body.particle-mode #petals {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 1s ease !important;
+}
+
+body.heart-ready #animationCanvas {
+    cursor: pointer;
+}
+
+.falling-heart {
+    position: fixed;
+    top: -50px;
+    color: #ffb3d9;
+    pointer-events: none;
+    z-index: 9999;
+    animation: heartFall linear forwards;
+}
+
+@keyframes heartFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+
+/* ===========================
+   Mobile & Large Screens
+=========================== */
+@media(max-width: 900px) {
+    .letter {
+        width: 78vw;
+        height: 50vw;
+        bottom: 5vw;
+        top: auto;
+        padding: 35px;
+    }
+    .envelope-wrapper.open .letter {
+        height: 120vw;
+        transform: translateX(-50%) translateY(-20vw);
+    }
+    .letter h1 {
+        font-size: 34px;
+    }
+    .letter-text {
+        font-size: 15px;
+        line-height: 1.8;
+    }
+    .seal {
+        width: 70px !important;
+    }
+    body.read-mode .letter {
+        width: 95vw !important;
+        height: 95vh !important;
+        padding: 40px 25px !important;
+    }
+}
+
+@media(min-width: 1600px) {
+    .envelope-wrapper {
+        width: 760px;
+        height: 540px;
+    }
+    .letter {
+        width: 600px;
+        height: 820px;
+    }
+}
+
+/* =========================================================
+   GLOBAL WATERMARK
+========================================================= */
+#watermark {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.45); /* Low opacity white */
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    z-index: 9999; /* Forces it to stay on top of everything */
+    pointer-events: none; /* Ensures you can still click things behind it */
+    text-align: center;
+    transition: opacity 1s ease;
+}
+
+/* Optional: Hides the watermark on very small mobile screens if it gets in the way */
+@media(max-height: 600px) {
+    #watermark {
+        opacity: 0 !important;
+    }
+}
+
+/* =========================================================
+   DO YOU LOVE ME POP-UP
+========================================================= */
+#loveQuestion {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(30, 5, 15, 0.95);
+    padding: 40px 50px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 180, 180, 0.4);
+    z-index: 10001;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 1s ease-in-out;
+}
+
+#loveQuestion.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+#loveQuestion h2 {
+    font-family: 'Cinzel', serif;
+    color: #ffb3d9;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+.question-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    height: 60px; /* Made slightly taller to fit the glowing button */
+}
+
+.question-buttons button {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    padding: 12px 35px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* The Irresistible "Yes" Button */
+#btnYes {
+    background: linear-gradient(45deg, #ff0844 0%, #ffb199 100%);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 20px rgba(255, 8, 68, 0.5), inset 0 0 10px rgba(255,255,255,0.3);
+    animation: pulseGlow 2s infinite;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+}
+
+#btnYes:hover {
+    transform: scale(1.15) translateY(-3px);
+    box-shadow: 0 15px 30px rgba(255, 8, 68, 0.8), inset 0 0 15px rgba(255,255,255,0.5);
+    letter-spacing: 3px;
+}
+
+/* The Glowing Heartbeat Animation for the Yes Button */
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 15px rgba(255, 8, 68, 0.4); }
+    50% { box-shadow: 0 0 35px rgba(255, 8, 68, 0.9), 0 0 10px rgba(255,255,255,0.6); }
+    100% { box-shadow: 0 0 15px rgba(255, 8, 68, 0.4); }
+}
+
+/* The Fragile "No" Button */
+#btnNo {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    font-weight: 300;
+    position: absolute;
+    left: calc(50% + 30px);
+    transition: transform 0.2s ease-out, opacity 0.2s ease;
+    z-index: 1;
+}
