@@ -40,7 +40,7 @@ function openEnvelope() {
 
     setTimeout(() => {
         if (bgMusic) {
-            bgMusic.volume = 0.1;
+            bgMusic.volume = 0.5;
             bgMusic.play().catch(() => console.log("Music blocked until user interaction."));
         }
     }, 1200);
