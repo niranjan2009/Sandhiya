@@ -1,922 +1,610 @@
-/* =========================================================
-   To My Dear Sandhiya — script.js (v2)
-   Works together with index.html and style.css (v2).
-========================================================= */
-(() => {
-'use strict';
+const wrapper = document.getElementById("envelopeWrapper");
+const seal = document.getElementById("seal");
+const flap = document.getElementById("flap");
+const letter = document.getElementById("letter");
+const bgMusic = document.getElementById("bgMusic");
+const heartMusic = document.getElementById("heartMusic");
+const sealSound = document.getElementById("sealSound");
+const openSound = document.getElementById("openSound");
+const nextArrow = document.getElementById("nextArrow");
+const scrollHint = document.getElementById("scrollHint");
+const countdownMusic = document.getElementById("countdownMusic");
 
-/* ---------- shortcuts ---------- */
-const $ = (id) => document.getElementById(id);
-const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const isSmallScreen = () =>
-  window.matchMedia('(max-width: 900px)').matches ||
-  window.matchMedia('(pointer: coarse)').matches;
-
-const wrapper        = $('envelopeWrapper');
-const letter         = $('letter');
-const bgMusic        = $('bgMusic');
-const heartMusic     = $('heartMusic');
-const sealSound      = $('sealSound');
-const openSound      = $('openSound');
-const countdownMusic = $('countdownMusic');
-const nextArrow      = $('nextArrow');
-const scrollHint     = $('scrollHint');
-const preloader      = $('preloader');
-const loaderPercent  = $('loaderPercent');
-const loaderStatus   = $('loaderStatus');
-
-/* One heart shape, used for every heart on the page. It is drawn as a
-   vector (not a text symbol) so phones can never swap it for a red emoji. */
-const HEART_PATH = 'M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z';
-function makeHeart(sizePx, color) {
-  const d = document.createElement('div');
-  d.style.cssText = `color:${color};font-size:${sizePx}px;line-height:0;pointer-events:none;`;
-  d.innerHTML = `<svg viewBox="0 0 32 29.6" style="width:1em;height:1em;display:block" aria-hidden="true"><path fill="currentColor" d="${HEART_PATH}"/></svg>`;
-  return d;
-}
-
-function playSound(a, volume) {
-  if (!a) return;
-  try {
-    a.currentTime = 0;
-    if (volume != null) a.volume = volume;
-    const p = a.play();
-    if (p && p.catch) p.catch(() => {});
-  } catch (_) {}
-}
-
-/* =========================================================
-   1. LOADING SCREEN — loads everything before the page begins
-========================================================= */
-const IMAGES = [
-  'assets/background.jpg',
-  'assets/envelope-bottom.png',
-  'assets/envelope-flap.png',
-  'assets/paper.png',
-  'assets/wax-seal.png',
-  'assets/petal.png'
-];
-const SOUNDS = [
-  'assets/music.mp3',
-  'assets/seal-break.mp3',
-  'assets/open.mp3',
-  'assets/heart-music.mp3',
-  'assets/countdown.mp3'
-];
-
-const prog = {
-  fonts: 0,
-  images: new Array(IMAGES.length).fill(0),
-  sounds: new Array(SOUNDS.length).fill(0)
-};
-const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-
-let allSettled = false;
-let started = false;
-
-/* Download a file and report 0..1 as it arrives. The browser keeps the
-   file, so the page and the audio tags get it instantly afterwards. */
-async function fetchTracked(url, report) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const total = Number(res.headers.get('content-length')) || 0;
-  if (!res.body || !total) { await res.blob(); report(1); return; }
-  const reader = res.body.getReader();
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    got += value.length;
-    report(Math.min(got / total, 0.99));
-  }
-  report(1);
-}
-
-async function loadImage(src, i) {
-  const report = (v) => { prog.images[i] = v; };
-  try {
-    await fetchTracked(src, report);
-  } catch (_) {
-    // opened from a folder (file://) or fetch blocked: let the image tag do it
-    await new Promise((r) => { const im = new Image(); im.onload = im.onerror = r; im.src = src; });
-  }
-  try { const im = new Image(); im.src = src; if (im.decode) await im.decode(); } catch (_) {}
-  report(1);
-}
-
-async function loadSound(src, i) {
-  const report = (v) => { prog.sounds[i] = v; };
-  try {
-    await fetchTracked(src, report);
-  } catch (_) {
-    await new Promise((r) => {
-      const a = new Audio();
-      a.preload = 'auto';
-      a.addEventListener('canplaythrough', r, { once: true });
-      a.addEventListener('error', r, { once: true });
-      setTimeout(r, 4000);
-      a.src = src;
-    });
-  }
-  report(1);
-}
-
-async function loadFonts() {
-  const link = document.querySelector('link[href*="fonts.googleapis.com"]');
-  if (link && !link.sheet) {
-    await Promise.race([
-      new Promise((r) => {
-        link.addEventListener('load', r, { once: true });
-        link.addEventListener('error', r, { once: true });
-      }),
-      wait(5000)
-    ]);
-  }
-  prog.fonts = 0.5;
-  if (document.fonts && document.fonts.load) {
-    await Promise.race([
-      Promise.all([
-        document.fonts.load('600 1em Cinzel'),
-        document.fonts.load('1em "Great Vibes"'),
-        document.fonts.load('300 1em Poppins'),
-        document.fonts.load('400 1em Poppins'),
-        document.fonts.load('500 1em Poppins'),
-        document.fonts.load('600 1em Poppins')
-      ]),
-      wait(5000)
-    ]).catch(() => {});
-  }
-  prog.fonts = 1;
-}
-
-function overallProgress() {
-  // script.js and style.css are already here, so "code" counts as done (6%)
-  return 0.06 + 0.10 * prog.fonts + 0.36 * avg(prog.images) + 0.48 * avg(prog.sounds);
-}
-
-function statusText() {
-  if (prog.fonts < 1) return 'Getting things ready…';
-  if (avg(prog.images) < 1) return 'Preparing the envelope…';
-  if (avg(prog.sounds) < 1) return 'Tuning the music…';
-  return 'Almost there…';
-}
-
-(function runLoader() {
-  const t0 = performance.now();
-  const MIN_SHOW = 900;      // never flash the loader for a split second
-  const HARD_LIMIT = 20000;  // never get stuck on a bad connection
-  let shown = 0;
-  let lastStatus = '';
-  let lastPct = -1;
-
-  Promise.allSettled([
-    loadFonts(),
-    ...IMAGES.map(loadImage),
-    ...SOUNDS.map(loadSound)
-  ]).then(() => { allSettled = true; });
-
-  function frame(now) {
-    const timedOut = now - t0 > HARD_LIMIT;
-    const target = (allSettled || timedOut) ? 1 : Math.min(overallProgress(), 0.99);
-    shown += (target - shown) * 0.14;
-    if (target - shown < 0.002) shown = target;
-
-    const pct = Math.round(shown * 100);
-    if (preloader) preloader.style.setProperty('--p', (shown * 100).toFixed(1));
-    if (loaderPercent && pct !== lastPct) { loaderPercent.textContent = pct + '%'; lastPct = pct; }
-    const st = shown >= 0.995 ? 'Ready ♥' : statusText();
-    if (loaderStatus && st !== lastStatus) { loaderStatus.textContent = st; lastStatus = st; }
-
-    if (shown >= 0.995 && now - t0 > MIN_SHOW) {
-      setTimeout(startExperience, 350);
-    } else {
-      requestAnimationFrame(frame);
-    }
-  }
-  requestAnimationFrame(frame);
-})();
-
-function startExperience() {
-  if (started) return;
-  started = true;
-  if (preloader) {
-    preloader.classList.add('is-done');
-    setTimeout(() => preloader.remove(), 1100);
-  }
-  document.body.classList.remove('loading');
-  try {
-    wrapper.animate(
-      [{ translate: '0 50px', opacity: 0 }, { translate: '0 0', opacity: 1 }],
-      { duration: 1200, easing: 'ease-out' }
-    );
-  } catch (_) {}
-  startAmbient();
-}
-
-/* =========================================================
-   2. OPEN THE ENVELOPE
-========================================================= */
 let opened = false;
 
-wrapper.setAttribute('role', 'button');
-wrapper.setAttribute('tabindex', '0');
-wrapper.setAttribute('aria-label', 'Open the letter');
-
-/* Phones only let a sound start after a tap. The first tap "unlocks" every
-   sound quietly so the timed ones (music, open sound) still play later. */
-function unlockAudio() {
-  [openSound, bgMusic, heartMusic, countdownMusic].forEach((a) => {
-    if (!a) return;
-    try {
-      a.muted = true;
-      const p = a.play();
-      Promise.resolve(p).then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
-        .catch(() => { a.muted = false; });
-    } catch (_) { a.muted = false; }
-  });
-}
+/* ==================
+   CLICK TO OPEN
+================== */
+wrapper.addEventListener("click", openEnvelope);
 
 function openEnvelope() {
-  if (opened || !started) return;
-  opened = true;
+    if (opened) return;
+    opened = true;
+    wrapper.classList.add("open");
 
-  wrapper.classList.add('open');
-  playSound(sealSound);
-  unlockAudio();
+    if (sealSound) {
+        sealSound.currentTime = 0;
+        sealSound.play();
+    }
 
-  setTimeout(() => playSound(openSound), 500);
-  setTimeout(() => playSound(bgMusic, 0.5), 1200);
-  setTimeout(startTypewriter, 1800);
-  setTimeout(enterReadMode, 2000);
-  letter.scrollTop = 0;
+    setTimeout(() => {
+        if (openSound) {
+            openSound.currentTime = 0;
+            openSound.play();
+        }
+    }, 500);
+
+    setTimeout(() => {
+        document.body.classList.add("read-mode");
+    }, 2000);
+
+    setTimeout(() => {
+        if (bgMusic) {
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(() => console.log("Music blocked until user interaction."));
+        }
+    }, 1200);
+
+    letter.scrollTop = 0;
 }
 
-wrapper.addEventListener('click', openEnvelope);
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    if (!opened && started) { e.preventDefault(); openEnvelope(); }
-  }
+document.querySelectorAll("img").forEach(img => img.draggable = false);
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") openEnvelope();
 });
 
-/* Full-screen reading: the letter leaves the (scaled-down) envelope and
-   glides to fill the screen. This is what makes it readable on phones. */
-function enterReadMode() {
-  const first = letter.getBoundingClientRect();
-  document.body.appendChild(letter);
-  document.body.classList.add('read-mode');
-  letter.scrollTop = 0;
-  const last = letter.getBoundingClientRect();
-  const box = (r) => ({
-    left: (r.left + r.width / 2) + 'px',
-    top: (r.top + r.height / 2) + 'px',
-    width: r.width + 'px',
-    height: r.height + 'px'
-  });
-  try {
-    letter.animate([box(first), box(last)], { duration: 1500, easing: 'ease-in-out' });
-  } catch (_) {}
-}
+letter.addEventListener("scroll", () => {
+    const maxScroll = letter.scrollHeight - letter.clientHeight;
+    const progress = letter.scrollTop / maxScroll;
+    letter.style.boxShadow = `0 20px 50px rgba(0,0,0,.45), 0 0 ${progress * 60}px rgba(255, 180, 180,.35)`;
+});
+
+const preload = ["assets/background.jpg", "assets/envelope-bottom.png", "assets/envelope-flap.png", "assets/paper.png", "assets/wax-seal.png", "assets/petal.png"];
+preload.forEach(src => { const img = new Image(); img.src = src; });
 
 /* =========================================================
-   3. TYPEWRITER (types the letter without re-building it each letter)
+   ABSOLUTE ASSET PRE-LOADER (Waits for Audio & Images)
 ========================================================= */
-const textContainer = document.querySelector('.letter-text');
-const typingOps = [];
-const CHAR_MS = 20;
-let typingDone = false;
-let typingStarted = false;
+const assetsToLoad = [
+    "assets/background.jpg",
+    "assets/envelope-bottom.png",
+    "assets/envelope-flap.png",
+    "assets/paper.png",
+    "assets/wax-seal.png",
+    "assets/petal.png",
+    "assets/music.mp3",
+    "assets/seal-break.mp3",
+    "assets/open.mp3",
+    "assets/heart-music.mp3",
+    "assets/countdown.mp3"
+];
 
-(function planTyping() {
-  const walk = (parent) => {
-    parent.childNodes.forEach((n) => {
-      if (n.nodeType === 3) {
-        const s = n.nodeValue.replace(/\s+/g, ' ');
-        if (s.trim() === '') return;
-        typingOps.push({ t: 'text', chars: Array.from(s) });
-      } else if (n.nodeType === 1) {
-        if (n.tagName === 'BR') {
-          typingOps.push({ t: 'node', el: n });
-        } else {
-          typingOps.push({ t: 'open', el: n });
-          walk(n);
-          typingOps.push({ t: 'close' });
-        }
-      }
-    });
-  };
-  walk(textContainer);
-  textContainer.textContent = '';
-})();
+let loadedCount = 0;
+const preloader = document.getElementById("preloader");
 
-function startTypewriter() {
-  if (typingStarted) return;
-  typingStarted = true;
-  const stack = [textContainer];
-  let i = 0;
-  let pos = 0;
-  let node = null;
-  let acc = 0;
-  let last = performance.now();
-
-  function frame(now) {
-    acc += Math.min(now - last, 100);
-    last = now;
-    let budget = Math.floor(acc / CHAR_MS);
-    acc -= budget * CHAR_MS;
-
-    while (i < typingOps.length) {
-      const op = typingOps[i];
-      if (op.t === 'open') {
-        const el = op.el.cloneNode(false);
-        stack[stack.length - 1].appendChild(el);
-        stack.push(el);
-        i++;
-      } else if (op.t === 'close') {
-        stack.pop();
-        i++;
-      } else if (op.t === 'node') {
-        stack[stack.length - 1].appendChild(op.el.cloneNode(false));
-        i++;
-      } else {
-        if (!node) {
-          node = document.createTextNode('');
-          stack[stack.length - 1].appendChild(node);
-          pos = 0;
-        }
-        if (budget <= 0) break;
-        const take = Math.min(budget, op.chars.length - pos);
-        pos += take;
-        budget -= take;
-        node.data = op.chars.slice(0, pos).join('');
-        if (pos >= op.chars.length) { node = null; i++; }
-      }
+function assetLoaded() {
+    loadedCount++;
+    // When all files are successfully loaded
+    if (loadedCount >= assetsToLoad.length) {
+        startExperience();
     }
+}
 
-    if (i < typingOps.length) {
-      requestAnimationFrame(frame);
+function startExperience() {
+    setTimeout(() => {
+        preloader.style.opacity = "0"; // Fade out
+        setTimeout(() => {
+            preloader.style.display = "none"; // Remove from screen
+            wrapper.animate([
+                { transform: "translateY(50px)", opacity: 0 },
+                { transform: "translateY(0)", opacity: 1 }
+            ], { duration: 1200, easing: "ease-out" });
+        }, 1000);
+    }, 1000);
+}
+
+// Loop through the list and force the browser to load them
+assetsToLoad.forEach(src => {
+    if (src.endsWith(".mp3")) {
+        const audio = new Audio();
+        audio.src = src;
+        audio.addEventListener("canplaythrough", assetLoaded, { once: true });
+        audio.load();
     } else {
-      typingDone = true;
-      if (scrollHint) scrollHint.classList.add('show');
-      checkEnd();
+        const img = new Image();
+        img.src = src;
+        img.onload = assetLoaded;
+        img.onerror = assetLoaded; // Prevents getting stuck if a file fails
     }
-  }
-  requestAnimationFrame((t) => { last = t; frame(t); });
+});
+
+// SAFETY FALLBACK: Mobile browsers sometimes block background audio loading to save data.
+// If 6 seconds pass and it's still loading, we force it to open anyway so she doesn't get stuck.
+setTimeout(() => {
+    if (loadedCount < assetsToLoad.length) {
+        loadedCount = assetsToLoad.length;
+        startExperience();
+    }
+}, 6000);
+
+wrapper.addEventListener("touchstart", openEnvelope);
+
+const particleContainer = document.getElementById("particles");
+function createParticle() {
+    const p = document.createElement("div");
+    p.classList.add("particle");
+    p.style.left = Math.random() * window.innerWidth + "px";
+    p.style.top = window.innerHeight + "px";
+    p.style.animationDuration = (6 + Math.random() * 8) + "s";
+    p.style.opacity = 0.2 + Math.random() * 0.8;
+    p.style.transform = `scale(${0.5 + Math.random()})`;
+    particleContainer.appendChild(p);
+    setTimeout(() => p.remove(), 15000);
+}
+setInterval(createParticle, 180);
+
+const petalContainer = document.getElementById("petals");
+function createPetal() {
+    const petal = document.createElement("img");
+    petal.src = "assets/petal.png";
+    petal.classList.add("petal");
+    petal.style.left = Math.random() * window.innerWidth + "px";
+    petal.style.top = "-100px";
+    petal.style.width = (40 + Math.random() * 5) + "px";
+    petal.style.animationDuration = (8 + Math.random() * 6) + "s";
+    petal.style.transform = `rotate(${Math.random() * 360}deg)`;
+    petalContainer.appendChild(petal);
+    setTimeout(() => petal.remove(), 16000);
+}
+setInterval(createPetal, 600);
+
+
+/* ============================
+   SMART TYPEWRITER EFFECT
+============================ */
+const textContainer = document.querySelector(".letter-text");
+const originalText = textContainer.innerHTML;
+textContainer.innerHTML = "";
+let index = 0;
+
+function typeWriter() {
+    if (index < originalText.length) {
+        let char = originalText.charAt(index);
+
+        // 1. Check if we hit an HTML tag (like <br> or <h2>)
+        if (char === '<') {
+            let tag = "";
+            while (index < originalText.length) {
+                tag += originalText.charAt(index);
+                if (originalText.charAt(index) === '>') {
+                    index++;
+                    break;
+                }
+                index++;
+            }
+            textContainer.innerHTML += tag;
+            typeWriter(); // Instantly fire next character so there's no delay for tags
+            
+        // 2. Check if we hit an HTML symbol code (like &amp;)
+        } else if (char === '&') {
+            let entity = "";
+            while (index < originalText.length) {
+                entity += originalText.charAt(index);
+                if (originalText.charAt(index) === ';') {
+                    index++;
+                    break;
+                }
+                index++;
+            }
+            textContainer.innerHTML += entity;
+            typeWriter(); // Instantly fire next character
+            
+        // 3. Normal text characters type out slowly
+} else {
+  textContainer.innerHTML += char;
+  index++;
+  setTimeout(typeWriter, 20); 
+}
+    } else {
+        // Show "(Scroll Down)" hint once the typewriter effect finishes completely
+        if (scrollHint) {
+            scrollHint.classList.add("show");
+        }
+    }
 }
 
-/* =========================================================
-   4. FINAL MESSAGE + NEXT ARROW
-========================================================= */
-const finalMessage = document.createElement('div');
-finalMessage.className = 'final-message';
-finalMessage.innerHTML = '<br><br>I Love You Forever<br><br>Sandhiya';
-const letterContent = letter.querySelector('.letter-content');
+wrapper.addEventListener("click", () => {
+    if (index === 0) setTimeout(typeWriter, 1800);
+});
+
+
+/* ============================
+   FINAL MESSAGE & NEXT ARROW
+============================ */
+const finalMessage = document.createElement("div");
+finalMessage.className = "final-message";
+finalMessage.innerHTML = "<br><br>I Love You Forever<br><br>Sandhiya";
+
+const letterContent = letter.querySelector(".letter-content");
 letterContent.insertBefore(finalMessage, nextArrow);
 
-let finalShown = false;
-function checkEnd() {
-  if (!typingDone || finalShown) return;
-  const distance = letter.scrollHeight - letter.clientHeight;
-  if (letter.scrollTop >= distance - 50) {
-    finalShown = true;
-    finalMessage.classList.add('show');
-    setTimeout(() => nextArrow.classList.add('show'), 800);
-  }
+letter.addEventListener("scroll", () => {
+    const distance = letter.scrollHeight - letter.clientHeight;
+    if (letter.scrollTop >= distance - 50) {
+        finalMessage.classList.add("show");
+        setTimeout(() => {
+            nextArrow.classList.add("show");
+        }, 800);
+    }
+});
+
+document.addEventListener("mousemove", (e) => {
+    const x = (e.clientX / window.innerWidth - .5) * 15;
+    const y = (e.clientY / window.innerHeight - .5) * 15;
+    document.body.style.backgroundPosition = `${50 + x}% ${50 + y}%`;
+});
+
+function createHeart() {
+    const heart = document.createElement("div");
+    heart.innerHTML = "❤";
+    heart.style.position = "absolute";
+    heart.style.left = Math.random() * window.innerWidth + "px";
+    heart.style.bottom = "-40px";
+    heart.style.color = "rgba(255,180,220,.5)";
+    heart.style.fontSize = (25 + Math.random() * 30) + "px";
+    heart.style.pointerEvents = "none";
+    heart.style.transition = "all 10s linear";
+    document.body.appendChild(heart);
+    setTimeout(() => {
+        heart.style.transform = `translateY(-${window.innerHeight + 300}px) rotate(${Math.random() * 720}deg)`;
+        heart.style.opacity = 0;
+    }, 100);
+    setTimeout(() => heart.remove(), 11000);
 }
-letter.addEventListener('scroll', checkEnd, { passive: true });
+setInterval(createHeart, 2500);
 
 /* =========================================================
-   5. BACKGROUND MAGIC (particles, petals, floating hearts)
+   PARTICLE TEXT ANIMATION & FINAL BURST
 ========================================================= */
-const particleLayer = $('particles');
-const petalLayer = $('petals');
-const body = document.body;
 
-/* Pauses while the tab is hidden, during the heart show, and (on phones)
-   while the letter covers the screen — saves battery and keeps it smooth. */
-function ambientOn() {
-  if (document.hidden) return false;
-  if (body.classList.contains('particle-mode')) return false;
-  if (isSmallScreen() && body.classList.contains('read-mode')) return false;
-  return true;
-}
-
-function createParticle() {
-  if (!ambientOn() || particleLayer.childElementCount > 70) return;
-  const p = document.createElement('div');
-  p.className = 'particle';
-  p.style.left = Math.random() * window.innerWidth + 'px';
-  p.style.top = window.innerHeight + 'px';
-  p.style.animationDuration = (6 + Math.random() * 8) + 's';
-  p.style.opacity = 0.2 + Math.random() * 0.8;
-  particleLayer.appendChild(p);
-  setTimeout(() => p.remove(), 15000);
-}
-
-function createPetal() {
-  if (!ambientOn() || petalLayer.childElementCount > 30) return;
-  const petal = document.createElement('img');
-  petal.src = 'assets/petal.png';
-  petal.alt = '';
-  petal.draggable = false;
-  petal.className = 'petal';
-  petal.style.left = Math.random() * window.innerWidth + 'px';
-  petal.style.top = '-100px';
-  petal.style.width = (40 + Math.random() * 5) + 'px';
-  petal.style.animationDuration = (8 + Math.random() * 6) + 's';
-  petalLayer.appendChild(petal);
-  petal.addEventListener('animationend', () => petal.remove(), { once: true });
-  setTimeout(() => petal.remove(), 16000);
-}
-
-/* Soft hearts drifting up. `force` is used by the final "Yes" celebration. */
-function createHeart(force) {
-  if (!force && !ambientOn()) return;
-  const size = 25 + Math.random() * 30;
-  const h = makeHeart(size, 'rgb(255,180,220)');
-  h.style.position = 'fixed';
-  h.style.left = Math.random() * window.innerWidth + 'px';
-  h.style.bottom = '-40px';
-  h.style.zIndex = force ? '10002' : '0';
-  body.appendChild(h);
-  const rise = window.innerHeight + 300;
-  try {
-    const a = h.animate(
-      [
-        { transform: 'translateY(0) rotate(0deg)', opacity: force ? 0.9 : 0.5 },
-        { transform: `translateY(-${rise}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
-      ],
-      { duration: 10000, easing: 'linear' }
-    );
-    a.onfinish = () => h.remove();
-  } catch (_) {
-    setTimeout(() => h.remove(), 10000);
+nextArrow.addEventListener("click", () => {
+  document.body.classList.add("particle-mode");
+  setTimeout(startParticleAnimation, 1200);
+  
+  // 1. Pause the original background music
+  if (bgMusic) {
+    bgMusic.pause();
   }
-}
-
-function startAmbient() {
-  const small = isSmallScreen();
-  setInterval(createParticle, small ? 420 : 180);
-  setInterval(createPetal, small ? 1100 : 600);
-  setInterval(() => createHeart(false), small ? 4000 : 2500);
-
-  // gentle background drift with the mouse (laptops only)
-  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    let pending = false;
-    let mx = 0, my = 0;
-    document.addEventListener('mousemove', (e) => {
-      mx = (e.clientX / window.innerWidth - 0.5) * 15;
-      my = (e.clientY / window.innerHeight - 0.5) * 15;
-      if (pending) return;
-      pending = true;
-      requestAnimationFrame(() => {
-        pending = false;
-        body.style.backgroundPosition = `${50 + mx}% ${50 + my}%`;
-      });
-    }, { passive: true });
-  }
-}
-
-/* Music follows the app: pauses when you switch tabs, resumes on return */
-const resumeList = [];
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    resumeList.length = 0;
-    [bgMusic, heartMusic, countdownMusic].forEach((a) => {
-      if (a && !a.paused) { resumeList.push(a); a.pause(); }
-    });
-  } else {
-    resumeList.forEach((a) => { const p = a.play(); if (p && p.catch) p.catch(() => {}); });
-    resumeList.length = 0;
+  
+  // 2. Play the new countdown music
+  if (countdownMusic) {
+    countdownMusic.volume = 0.25; // Adjust this number to change the volume
+    countdownMusic.currentTime = 0;
+    countdownMusic.play().catch(() => console.log("Music blocked by browser."));
   }
 });
 
-/* =========================================================
-   6. HEART SHOW — rose-pink hearts spell the countdown, then a heart
-   One colour only: shades of rose with a soft light that ripples
-   through them (no blinking, no rainbow).
-========================================================= */
-const canvas = $('animationCanvas');
+const canvas = document.getElementById('animationCanvas');
 const ctx = canvas.getContext('2d');
-let W = window.innerWidth, H = window.innerHeight, DPR = 1;
+let width, height;
 
-const bgMatch = (getComputedStyle(canvas).backgroundColor || '').match(/[\d.]+/g);
-const BG_RGB = bgMatch && bgMatch.length >= 3 ? bgMatch.slice(0, 3).join(',') : '26,26,28';
-
-const HUE = 338;      // rose pink — the one colour of the show
-const TONES = 8;      // how many shades of that rose are used
-let sprites = [];
-let spriteBox = 12;
-
-function heartShape(g, r) {
-  g.beginPath();
-  g.moveTo(0, r * 0.9);
-  g.bezierCurveTo(-r * 1.5, r * 0.1, -r * 1.0, -r * 0.95, 0, -r * 0.4);
-  g.bezierCurveTo(r * 1.0, -r * 0.95, r * 1.5, r * 0.1, 0, r * 0.9);
-  g.closePath();
+function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
 }
+window.addEventListener('resize', resize);
+resize();
 
-/* Each shade is drawn once (with its soft glow) and stamped for every heart */
-function buildSprites() {
-  const sz = clamp(Math.min(W, H) / 80, 6.5, 10);
-  spriteBox = Math.ceil(sz * 2.6);
-  sprites = [];
-  for (let k = 0; k < TONES; k++) {
-    const t = k / (TONES - 1);
-    const c = document.createElement('canvas');
-    c.width = c.height = Math.ceil(spriteBox * DPR);
-    const g = c.getContext('2d');
-    g.scale(DPR, DPR);
-    g.translate(spriteBox / 2, spriteBox / 2);
-    const r = sz * 0.5;
-    g.shadowColor = `hsla(${HUE},100%,${62 + t * 14}%,${0.45 + 0.4 * t})`;
-    g.shadowBlur = sz * (0.8 + 0.6 * t) * DPR;
-    heartShape(g, r);
-    const gr = g.createLinearGradient(0, -r, 0, r);
-    gr.addColorStop(0, `hsl(${HUE},${96 - t * 20}%,${56 + t * 30}%)`);
-    gr.addColorStop(1, `hsl(${HUE},${96 - t * 10}%,${44 + t * 26}%)`);
-    g.fillStyle = gr;
-    g.fill();
-    sprites.push(c);
-  }
-}
-
-function sizeCanvas() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = canvas.clientWidth || window.innerWidth;
-  H = canvas.clientHeight || window.innerHeight;
-  canvas.width = Math.round(W * DPR);
-  canvas.height = Math.round(H * DPR);
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  buildSprites();
-}
-sizeCanvas();
-
-const particles = [];
+const chars = ['♥']; 
+const textParticles = []; 
 let isHeartPhase = false;
 let heartTime = 0;
 let hasBurst = false;
-let currentStage = -1;
 
-class HeartParticle {
-  constructor(x, y) {
-    this.x = W / 2 + (Math.random() - 0.5) * 200;
-    this.y = H / 2 + (Math.random() - 0.5) * 200;
-    this.baseTargetX = x;
-    this.baseTargetY = y;
-    this.vx = 0;
-    this.vy = 0;
-    this.phase = Math.random() * Math.PI * 2;
-    this.tone = Math.random();
-    this.scale = 0.85 + Math.random() * 0.4;
-    this.isExploding = false;
-    this.isActive = true;
-  }
-
-  step() {
-    if (!this.isActive) return;
-    if (this.isExploding) {
-      this.vx *= 0.94;
-      this.vy *= 0.94;
-    } else {
-      let tx = this.baseTargetX;
-      let ty = this.baseTargetY;
-      if (isHeartPhase) {
-        const cx = W / 2;
-        const cy = H / 2;
-        const s = 1 + Math.sin(heartTime) * 0.06;   // heartbeat
-        tx = cx + (this.baseTargetX - cx) * s;
-        ty = cy + (this.baseTargetY - cy) * s;
-      }
-      this.vx += (tx - this.x) * 0.08;
-      this.vy += (ty - this.y) * 0.08;
-      this.vx *= 0.82;
-      this.vy *= 0.82;
+class TextParticle {
+    constructor(x, y, color) {
+        this.x = width / 2 + (Math.random() - 0.5) * 200;
+        this.y = height / 2 + (Math.random() - 0.5) * 200;
+        this.baseTargetX = x;
+        this.baseTargetY = y;
+        this.targetX = x;
+        this.targetY = y;
+        this.color = color || '#ffffff';
+        this.char = chars[Math.floor(Math.random() * chars.length)];
+        this.vx = 0;
+        this.vy = 0;
+        this.friction = 0.82;
+        this.spring = 0.08;
+        this.isExploding = false;
+        this.isActive = true;
     }
-    this.x += this.vx;
-    this.y += this.vy;
-  }
 
-  draw(t) {
+    update() {
+        if (!this.isActive) return;
+        if (this.isExploding) {
+            this.vx *= 0.94;
+            this.vy *= 0.94;
+            this.x += this.vx;
+            this.y += this.vy;
+        } else {
+            let tx = this.targetX;
+            let ty = this.targetY;
+            if (isHeartPhase) {
+                const cx = width / 2;
+                const cy = height / 2;
+                const scale = 1 + Math.sin(heartTime) * 0.06;
+                tx = cx + (this.baseTargetX - cx) * scale;
+                ty = cy + (this.baseTargetY - cy) * scale;
+            }
+            const dx = tx - this.x;
+            const dy = ty - this.y;
+            this.vx += dx * this.spring;
+            this.vy += dy * this.spring;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+    }
+
+    draw(ctx) {
     if (!this.isActive) return;
-    // a slow wave of light travels through the hearts; each one also
-    // glows gently on its own — smooth, never a flash
-    const d = isHeartPhase
-      ? Math.hypot(this.x - W / 2, this.y - H / 2) * 0.013
-      : this.x * 0.0045 + this.y * 0.0032;
-    const wave = 0.5 + 0.5 * Math.sin(t * 2.0 - d);
-    const glow = 0.5 + 0.5 * Math.sin(t * 2.6 + this.phase);
-    const v = 0.5 * wave + 0.25 * glow + 0.25 * this.tone;
-    const level = Math.min(TONES - 1, Math.floor(v * TONES));
-    const size = spriteBox * this.scale;
-    ctx.globalAlpha = 0.6 + 0.4 * v;
-    ctx.drawImage(sprites[level], this.x - size / 2, this.y - size / 2, size, size);
+
+    // 1. Give each particle a random starting timer so they don't all blink at the exact same time
+    if (!this.lastFlash) {
+      this.lastFlash = Date.now() - Math.floor(Math.random() * 200);
+    }
+
+    // 2. Check if 300 milliseconds have passed. If so, pick a new random color!
+    if (Date.now() - this.lastFlash > 200) {
+      this.hue = Math.floor(Math.random() * 360);
+      this.lastFlash = Date.now();
+    }
+
+    // 3. Apply the color
+    ctx.fillStyle = `hsl(${this.hue}, 100%, 60%)`;
+    ctx.font = '11px Courier New';
+    ctx.fillText(this.char, this.x, this.y);
   }
 }
 
-function getTextPoints(text, fontSize, step) {
-  const off = document.createElement('canvas');
-  const o = off.getContext('2d');
-  off.width = W;
-  off.height = H;
+function getTextPoints(text, fontSize) {
+    const offCanvas = document.createElement('canvas');
+    const offCtx = offCanvas.getContext('2d');
+    offCanvas.width = width;
+    offCanvas.height = height;
+    
+    offCtx.fillStyle = 'black';
+    offCtx.fillRect(0, 0, width, height);
+    offCtx.fillStyle = 'white';
+    offCtx.font = `bold ${fontSize}px Arial`;
+    offCtx.textAlign = 'center';
+    offCtx.textBaseline = 'middle';
+    offCtx.fillText(text, width / 2, height / 2);
 
-  // make sure the word always fits the width of the screen
-  o.font = `bold ${fontSize}px Arial`;
-  const w = o.measureText(text).width;
-  if (w > W * 0.86) fontSize *= (W * 0.86) / w;
-
-  o.fillStyle = 'black';
-  o.fillRect(0, 0, W, H);
-  o.fillStyle = 'white';
-  o.font = `bold ${fontSize}px Arial`;
-  o.textAlign = 'center';
-  o.textBaseline = 'middle';
-  o.fillText(text, W / 2, H / 2);
-
-  const data = o.getImageData(0, 0, W, H).data;
-  const points = [];
-  for (let y = 0; y < H; y += step) {
-    for (let x = 0; x < W; x += step) {
-      if (data[(y * W + x) * 4] > 128) {
-        points.push({
-          x: x + (Math.random() - 0.5) * step * 0.5,
-          y: y + (Math.random() - 0.5) * step * 0.5
-        });
-      }
+    const imageData = offCtx.getImageData(0, 0, width, height).data;
+    const points = [];
+    const step = 8; 
+    
+    for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+            const index = (y * width + x) * 4;
+            if (imageData[index] > 128) {
+                points.push({ 
+                    x: x + (Math.random() - 0.5) * 4, 
+                    y: y + (Math.random() - 0.5) * 4 
+                });
+            }
+        }
     }
-  }
-  return points;
+    return points;
 }
 
 function getHeartPoints() {
-  const points = [];
-  const scale = Math.min(W, H) / 50;
-  const cx = W / 2;
-  const cy = H / 2 - 20;
-  const spread = clamp(Math.min(W, H) / 20, 14, 20);
-  for (let t = 0; t < Math.PI * 2; t += 0.02) {
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    for (let i = 0; i < 5; i++) {
-      points.push({
-        x: cx + x * scale + (Math.random() - 0.5) * spread,
-        y: cy + y * scale + (Math.random() - 0.5) * spread
-      });
+    const points = [];
+    const scale = Math.min(width, height) / 50; 
+    const cx = width / 2;
+    const cy = height / 2 - 20; 
+
+    for (let t = 0; t < Math.PI * 2; t += 0.02) {
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        for(let i = 0; i < 5; i++) {
+            points.push({
+                x: cx + x * scale + (Math.random() - 0.5) * 20,
+                y: cy + y * scale + (Math.random() - 0.5) * 20
+            });
+        }
     }
-  }
-  return points;
+    return points;
 }
 
-function updateTargets(newTargets) {
-  for (let i = 0; i < newTargets.length; i++) {
-    if (i < particles.length) {
-      const p = particles[i];
-      p.baseTargetX = newTargets[i].x;
-      p.baseTargetY = newTargets[i].y;
-      p.isActive = true;
-      p.isExploding = false;
-    } else {
-      particles.push(new HeartParticle(newTargets[i].x, newTargets[i].y));
+function updateTargets(newTargets, color) {
+    for (let i = 0; i < newTargets.length; i++) {
+        if (i < textParticles.length) {
+            textParticles[i].baseTargetX = newTargets[i].x;
+            textParticles[i].baseTargetY = newTargets[i].y;
+            textParticles[i].targetX = newTargets[i].x;
+            textParticles[i].targetY = newTargets[i].y;
+            textParticles[i].color = color;
+            textParticles[i].isActive = true;
+            textParticles[i].isExploding = false;
+        } else {
+            textParticles.push(new TextParticle(newTargets[i].x, newTargets[i].y, color));
+        }
     }
-  }
-  for (let i = newTargets.length; i < particles.length; i++) {
-    particles[i].isActive = false;
-  }
+    for (let i = newTargets.length; i < textParticles.length; i++) {
+        textParticles[i].isActive = false;
+    }
 }
 
 function explode() {
-  particles.forEach((p) => {
-    if (p.isActive) {
-      const angle = Math.random() * Math.PI * 2;
-      const force = (15 + Math.random() * 35) * clamp(Math.min(W, H) / 700, 0.6, 1);
-      p.vx = Math.cos(angle) * force;
-      p.vy = Math.sin(angle) * force;
-      p.isExploding = true;
-    }
-  });
+    textParticles.forEach(p => {
+        if (p.isActive) {
+            const angle = Math.random() * Math.PI * 2;
+            const force = 15 + Math.random() * 35; 
+            p.vx = Math.cos(angle) * force;
+            p.vy = Math.sin(angle) * force;
+            p.isExploding = true;
+        }
+    });
 }
 
-/* ---------- falling hearts after the burst ---------- */
-let fallingTimer = null;
-let fallingCount = 0;
 function startFallingHearts() {
-  if (fallingTimer) return;
-  const small = isSmallScreen();
-  fallingTimer = setInterval(() => {
-    if (document.hidden || fallingCount > (small ? 40 : 70)) return;
-    const h = makeHeart(15 + Math.random() * 20, '#ffb3d9');
-    h.className = 'falling-heart';
-    h.style.left = Math.random() * window.innerWidth + 'px';
-    h.style.animationDuration = (3 + Math.random() * 3) + 's';
-    body.appendChild(h);
-    fallingCount++;
-    const done = () => { h.remove(); fallingCount--; };
-    h.addEventListener('animationend', done, { once: true });
-  }, small ? 160 : 100);
+    setInterval(() => {
+        const heart = document.createElement("div");
+        heart.innerHTML = "❤";
+        heart.className = "falling-heart";
+        heart.style.left = Math.random() * window.innerWidth + "px";
+        heart.style.fontSize = (15 + Math.random() * 20) + "px";
+        heart.style.animationDuration = (3 + Math.random() * 3) + "s";
+        document.body.appendChild(heart);
+        
+        setTimeout(() => {
+            heart.remove();
+        }, 6000);
+    }, 100); 
 }
 
-/* ---------- the sequence: 3 · 2 · 1 · You · Are · My · Love · ♥ ---------- */
+canvas.addEventListener("click", () => {
+    if (isHeartPhase && !hasBurst) {
+        hasBurst = true;
+        document.body.classList.remove("heart-ready");
+        explode();
+        startFallingHearts();
+        
+        if (bgMusic) bgMusic.pause();
+        if (countdownMusic) {
+            countdownMusic.pause();
+            countdownMusic.currentTime = 0;
+        }
+        if (heartMusic) {
+            heartMusic.volume = 0.5; 
+            heartMusic.currentTime = 0; 
+            heartMusic.play().catch(() => console.log("Heart music blocked."));
+        }
+
+        // ---> NEW: Show the question 4 seconds after the heart bursts <---
+        setTimeout(() => {
+            document.getElementById("loveQuestion").classList.add("show");
+        }, 4000);
+    }
+});
+
 const sequence = [
-  { type: 'text', val: '3' },
-  { type: 'text', val: '2' },
-  { type: 'text', val: '1' },
-  { type: 'text', val: 'You' },
-  { type: 'text', val: 'Are' },
-  { type: 'text', val: 'My' },
-  { type: 'text', val: 'Love' },
-  { type: 'heart' }
+{ type: 'text', val: '3', color: '#FFD700' },    // Gold
+{ type: 'text', val: '2', color: '#FF8C00' },    // Dark Orange
+{ type: 'text', val: '1', color: '#FF69B4' },    // Hot Pink
+{ type: 'text', val: 'You', color: '#00FFFF' },  // Cyan / Bright Blue
+{ type: 'text', val: 'Are', color: '#98FB98' },  // Mint Green
+{ type: 'text', val: 'My', color: '#DDA0DD' },   // Plum / Light Purple
+{ type: 'text', val: 'Love', color: '#FF3333' }, // Bright Red
+{ type: 'heart', color: '#ff66b2' }              // (Kept the original pink for the heart shape)
 ];
+
 let currentIndex = 0;
 
-function applyStage(i) {
-  const s = sequence[i];
-  if (!s) return;
-  const m = Math.min(W, H);
-  if (s.type === 'text') {
-    updateTargets(getTextPoints(s.val, m * 0.45, Math.max(5, Math.round(m / 96))));
-  } else {
-    updateTargets(getHeartPoints());
-  }
-}
-
 function nextSequence() {
-  if (currentIndex >= sequence.length) return;
-  const current = sequence[currentIndex];
-  currentStage = currentIndex;
-  applyStage(currentIndex);
+    if (currentIndex >= sequence.length) return;
+    const current = sequence[currentIndex];
+    let targets = [];
 
-  if (current.type === 'text') {
-    setTimeout(() => {
-      explode();
-      setTimeout(() => { currentIndex++; nextSequence(); }, 700);
-    }, 1400);
-  } else {
-    isHeartPhase = true;
-    setTimeout(() => body.classList.add('heart-ready'), 1000);
-  }
+    if (current.type === 'text') {
+        const fontSize = Math.min(width, height) * 0.45; 
+        targets = getTextPoints(current.val, fontSize);
+        updateTargets(targets, current.color);
+        
+        setTimeout(() => {
+            explode();
+            setTimeout(() => {
+                currentIndex++;
+                nextSequence();
+            }, 700); 
+        }, 1400); 
+        
+    } else if (current.type === 'heart') {
+        targets = getHeartPoints();
+        updateTargets(targets, current.color); // fixed parameter assignment syntax
+        isHeartPhase = true;
+        
+        setTimeout(() => {
+            document.body.classList.add("heart-ready");
+        }, 1000);
+    }
 }
 
-function drawCaption(t) {
-  const fs = clamp(W * 0.062, 14, 26);
-  const label = 'I LOVE YOU SANDHIYA';
-  ctx.font = `bold ${fs}px "Courier New", monospace`;
-  const tw = ctx.measureText(label).width;
-  const gap = fs * 0.45;
-  const hw = fs * 0.85;
-  const startX = W / 2 - (tw + gap + hw) / 2;
+function animateParticles() {
+    ctx.fillStyle = 'rgba(26, 26, 28, 0.3)';
+    ctx.fillRect(0, 0, width, height);
 
-  ctx.globalAlpha = 0.88 + 0.12 * Math.sin(t * 3);
-  ctx.fillStyle = '#ffb3d9';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(label, startX, H / 2);
-  ctx.save();
-  ctx.translate(startX + tw + gap + hw / 2, H / 2 - fs * 0.34);
-  heartShape(ctx, fs * 0.42);
-  ctx.fill();
-  ctx.restore();
+    if (isHeartPhase) {
+        heartTime += 0.08; 
+        
+        if (!hasBurst) {
+            ctx.fillStyle = '#ffb3d9';
+            ctx.font = 'bold 26px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText("I LOVE YOU SANDHIYA ♥", width / 2, height / 2);
+            
+            // Instruction 3: Low-opacity "(Tap Here)" text inside the heart, just beneath her name
+            ctx.fillStyle = 'rgba(255, 179, 217, 0.45)'; // Low opacity soft pink
+            ctx.font = '13px Courier New';
+            ctx.fillText("(Tap Here)", width / 2, (height / 2) + 30);
+        }
+    }
 
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = 'rgba(255, 179, 217, 0.45)';
-  ctx.font = `${clamp(fs * 0.5, 10, 13)}px "Courier New", monospace`;
-  ctx.textAlign = 'center';
-  ctx.fillText('(Tap Here)', W / 2, H / 2 + fs + 4);
-}
-
-let animating = false;
-let lastFrame = 0;
-let physicsAcc = 0;
-const STEP_MS = 1000 / 60;
-
-function animateParticles(now) {
-  const dt = lastFrame ? Math.min(now - lastFrame, 50) : STEP_MS;
-  lastFrame = now;
-
-  // fade the previous frame a little (soft trails)
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = `rgba(${BG_RGB},${1 - Math.pow(0.7, dt / STEP_MS)})`;
-  ctx.fillRect(0, 0, W, H);
-
-  // physics runs at a steady 60 steps a second on any screen
-  physicsAcc += dt;
-  while (physicsAcc >= STEP_MS) {
-    physicsAcc -= STEP_MS;
-    if (isHeartPhase) heartTime += 0.08;
-    for (let i = 0; i < particles.length; i++) particles[i].step();
-  }
-
-  const t = now / 1000;
-  for (let i = 0; i < particles.length; i++) particles[i].draw(t);
-  ctx.globalAlpha = 1;
-
-  if (isHeartPhase && !hasBurst) drawCaption(t);
-  requestAnimationFrame(animateParticles);
+    textParticles.forEach(p => {
+        p.update();
+        p.draw(ctx);
+    });
+    requestAnimationFrame(animateParticles);
 }
 
 function startParticleAnimation() {
-  if (animating) return;
-  animating = true;
-  setTimeout(nextSequence, 500);
-  requestAnimationFrame(animateParticles);
+    setTimeout(() => {
+        nextSequence();
+    }, 500);
+    animateParticles();
 }
 
-let resizeTimer = null;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    sizeCanvas();
-    if (animating && currentStage >= 0 && !hasBurst) applyStage(currentStage);
-  }, 150);
-});
-
-/* ---------- go to the heart show ---------- */
-let showStarted = false;
-function goToHeartShow() {
-  if (showStarted) return;
-  showStarted = true;
-  body.classList.add('particle-mode');
-  setTimeout(startParticleAnimation, 1200);
-  if (bgMusic) bgMusic.pause();
-  if (countdownMusic) playSound(countdownMusic, 0.25);
-}
-nextArrow.addEventListener('click', goToHeartShow);
-nextArrow.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToHeartShow(); }
-});
-
-/* ---------- tap the heart: burst, music, then the question ---------- */
-canvas.addEventListener('click', () => {
-  if (!isHeartPhase || hasBurst) return;
-  hasBurst = true;
-  body.classList.remove('heart-ready');
-  explode();
-  startFallingHearts();
-
-  if (bgMusic) bgMusic.pause();
-  if (countdownMusic) { countdownMusic.pause(); countdownMusic.currentTime = 0; }
-  playSound(heartMusic, 0.5);
-
-  setTimeout(() => $('loveQuestion').classList.add('show'), 4000);
-});
-
-/* =========================================================
-   7. "DO YOU LOVE ME?" — the runaway No button
-========================================================= */
-const btnNo = $('btnNo');
-const btnYes = $('btnYes');
-let noX = 0, noY = 0, noOpacity = 1;
+/* ============================
+   RUNAWAY BUTTON LOGIC
+============================ */
+const btnNo = document.getElementById("btnNo");
+const btnYes = document.getElementById("btnYes");
 
 function moveNoButton(e) {
-  if (e && e.cancelable) e.preventDefault();
-
-  const r = btnNo.getBoundingClientRect();
-  const baseL = r.left - noX;           // where it sits before any moving
-  const baseT = r.top - noY;
-  const yes = btnYes.getBoundingClientRect();
-  const m = 12;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const reach = isSmallScreen() ? 130 : 160;
-
-  let pick = null;
-  for (let i = 0; i < 14 && !pick; i++) {
-    const nx = (Math.random() * 2 - 1) * reach;
-    const ny = (Math.random() * 2 - 1) * reach;
-    const L = baseL + nx;
-    const T = baseT + ny;
-    const inside = L >= m && T >= m && L + r.width <= vw - m && T + r.height <= vh - m;
-    const hitsYes = !(L + r.width < yes.left - 10 || L > yes.right + 10 ||
-                      T + r.height < yes.top - 10 || T > yes.bottom + 10);
-    const moved = Math.hypot(nx - noX, ny - noY) > 60;
-    if (inside && !hitsYes && moved) pick = { nx, ny };
-  }
-  if (!pick) {
-    // no good spot found: hop to the other side, kept on screen
-    let nx = noX > 0 ? -reach * 0.8 : reach * 0.8;
-    let ny = (Math.random() * 2 - 1) * reach * 0.5;
-    nx = clamp(nx, m - baseL, vw - m - r.width - baseL);
-    ny = clamp(ny, m - baseT, vh - m - r.height - baseT);
-    pick = { nx, ny };
-  }
-
-  noX = pick.nx;
-  noY = pick.ny;
-  noOpacity = Math.max(0.35, noOpacity - 0.08);
-  const rotation = Math.random() * 40 - 20;
-  btnNo.style.transform = `translate(${noX}px, ${noY}px) rotate(${rotation}deg) scale(0.85)`;
-  btnNo.style.opacity = String(noOpacity);
+    e.preventDefault(); 
+    
+    // Calculates a wider random jump
+    const x = Math.random() * 300 - 150; 
+    const y = Math.random() * 300 - 150; 
+    
+    // Adds a random tilt/rotation so it looks like it's tumbling away
+    const rotation = Math.random() * 40 - 20; 
+    
+    // Moves it, rotates it, and shrinks it slightly so it looks intimidated!
+    btnNo.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg) scale(0.85)`;
+    
+    // Makes it fade out slightly every time she tries to catch it
+    btnNo.style.opacity = "0.7";
 }
 
-btnNo.addEventListener('mouseover', moveNoButton);
-btnNo.addEventListener('focus', moveNoButton);
-btnNo.addEventListener('touchstart', moveNoButton, { passive: false });
-btnNo.addEventListener('click', moveNoButton);
+// Triggers when the mouse hovers over it
+btnNo.addEventListener("mouseover", moveNoButton);
+// Triggers when a finger tries to tap it on a phone
+btnNo.addEventListener("touchstart", moveNoButton);
 
-btnYes.addEventListener('click', () => {
-  $('loveQuestion').innerHTML = '<h2>I knew it! ❤️<br>You are my everything.</h2>';
-  for (let i = 0; i < 20; i++) {
-    setTimeout(() => createHeart(true), i * 150);
-  }
+// What happens when she finally clicks YES
+btnYes.addEventListener("click", () => {
+    const questionBox = document.getElementById("loveQuestion");
+    
+    // Change the text to a happy message
+    questionBox.innerHTML = `<h2>I knew it! ❤️<br>You are my everything.</h2>`;
+    
+    // Spawn a massive burst of extra hearts
+    for(let i = 0; i < 20; i++) {
+        setTimeout(createHeart, i * 150);
+    }
 });
-
-})();
