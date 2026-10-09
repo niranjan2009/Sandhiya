@@ -601,7 +601,7 @@ btnYes.addEventListener("click", () => {
     const questionBox = document.getElementById("loveQuestion");
     
     // Change the text to a happy message
-    questionBox.innerHTML = `<h2>I knew it! ❤️<br>You are my everything.</h2>`;
+    questionBox.innerHTML = `<h2>Love you too ma! ❤️<br>You are my everything.</h2>`;
     
     // Spawn a massive burst of extra hearts
     for(let i = 0; i < 20; i++) {
