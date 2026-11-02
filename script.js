@@ -386,7 +386,7 @@ function typeWriter() {
 ============================ */
 const finalMessage = document.createElement("div");
 finalMessage.className = "final-message";
-finalMessage.innerHTML = "<br><br>I Love You Forever<br><br>XXXXX";
+finalMessage.innerHTML = "<br><br>I Love You Forever<br><br>Sandhiya";
 
 const letterContent = letter.querySelector(".letter-content");
 letterContent.insertBefore(finalMessage, nextArrow);
@@ -510,24 +510,24 @@ class TextParticle {
         }
     }
 
-   draw(ctx) {
-    if (!this.isActive) return;
+    draw(ctx) {
+        if (!this.isActive) return;
 
-    // random start timer so particles don't all blink together
-    if (!this.lastFlash) {
-      this.lastFlash = Date.now() - Math.floor(Math.random() * 200);
+        // random start timer so particles don't all blink together
+        if (!this.lastFlash) {
+            this.lastFlash = Date.now() - Math.floor(Math.random() * 200);
+        }
+
+        // new random colour every 200ms (colour string cached = faster on phones)
+        if (!this.fill || Date.now() - this.lastFlash > 200) {
+            this.hue = Math.floor(Math.random() * 360);
+            this.fill = `hsl(${this.hue}, 100%, 60%)`;
+            this.lastFlash = Date.now();
+        }
+
+        ctx.fillStyle = this.fill;
+        ctx.fillText(this.char, this.x, this.y);
     }
-
-    // new random colour every 200ms (colour string cached = faster on phones)
-    if (!this.fill || Date.now() - this.lastFlash > 200) {
-      this.hue = Math.floor(Math.random() * 360);
-      this.fill = `hsl(${this.hue}, 100%, 60%)`;
-      this.lastFlash = Date.now();
-    }
-
-    ctx.fillStyle = this.fill;
-    ctx.fillText(this.char, this.x, this.y);
-  }
 }
 
 function getTextPoints(text, fontSize) {
@@ -657,15 +657,16 @@ canvas.addEventListener("click", () => {
 });
 
 const sequence = [
-  { type: 'text', val: '3', color: '#FFD700' }, // Gold
-  { type: 'text', val: '2', color: '#FF8C00' }, // Dark Orange
-  { type: 'text', val: '1', color: '#FF69B4' }, // Hot Pink
-  { type: 'text', val: 'You', color: '#00FFFF' }, // Cyan / Bright Blue
-  { type: 'text', val: 'Are', color: '#98FB98' }, // Mint Green
-  { type: 'text', val: 'My', color: '#DDA0DD' }, // Plum / Light Purple
-  { type: 'text', val: 'Love', color: '#FF3333' }, // Bright Red
-  { type: 'heart', color: '#ff66b2' }
+    { type: 'text', val: '3', color: '#FFD700' },    // Gold
+    { type: 'text', val: '2', color: '#FF8C00' },    // Dark Orange
+    { type: 'text', val: '1', color: '#FF69B4' },    // Hot Pink
+    { type: 'text', val: 'You', color: '#00FFFF' },  // Cyan / Bright Blue
+    { type: 'text', val: 'Are', color: '#98FB98' },  // Mint Green
+    { type: 'text', val: 'My', color: '#DDA0DD' },   // Plum / Light Purple
+    { type: 'text', val: 'Love', color: '#FF3333' }, // Bright Red
+    { type: 'heart', color: '#ff66b2' }
 ];
+
 let currentIndex = 0;
 
 function nextSequence() {
@@ -715,7 +716,7 @@ function animateParticles() {
             ctx.fillStyle = '#ffb3d9';
             ctx.font = `bold ${Math.min(26, width / 18)}px Courier New`;
             ctx.textAlign = 'center';
-            ctx.fillText("I LOVE YOU XXXXX ♥", width / 2, height / 2);
+            ctx.fillText("I LOVE YOU SANDHIYA ♥", width / 2, height / 2);
 
             // Low-opacity "(Tap Here)" text inside the heart, just beneath her name
             ctx.fillStyle = 'rgba(255, 179, 217, 0.45)';
@@ -784,7 +785,7 @@ btnNo.addEventListener("touchstart", moveNoButton, { passive: false });
 btnYes.addEventListener("click", () => {
     const questionBox = document.getElementById("loveQuestion");
 
-    questionBox.innerHTML = `<h2>Love you too! ❤️<br> You are my everything!!! </h2>`;
+    questionBox.innerHTML = `<h2>Love you too ma! ❤️<br> You are my everything!!! -Sandhiya Call pannu, Na unnoda reply kaga wait pandren! </h2>`;
 
     for (let i = 0; i < 20; i++) {
         setTimeout(createHeart, i * 150);
