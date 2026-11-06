@@ -644,13 +644,13 @@ canvas.addEventListener("click", () => {
 });
 
 const sequence = [
-    { type: 'text', val: '3', color: '#FFD700' },    // Gold
-    { type: 'text', val: '2', color: '#FF8C00' },    // Dark Orange
-    { type: 'text', val: '1', color: '#FF69B4' },    // Hot Pink
-    { type: 'text', val: 'You', color: '#00FFFF' },  // Cyan / Bright Blue
-    { type: 'text', val: 'Are', color: '#98FB98' },  // Mint Green
-    { type: 'text', val: 'My', color: '#DDA0DD' },   // Plum / Light Purple
-    { type: 'text', val: 'Love', color: '#FF3333' }, // Bright Red
+    { type: 'text', val: '3', color: '#ff66b2' },    
+    { type: 'text', val: '2', color: '#ff66b2' },    
+    { type: 'text', val: '1', color: '#ff66b2' },    
+    { type: 'text', val: 'I', color: '#ff66b2' },  
+    { type: 'text', val: 'LOVE', color: '#ff66b2' },  
+    { type: 'text', val: 'YOU', color: '#ff66b2' },   
+    { type: 'text', val: 'SANDHIYA', color: '#ff66b2' }, 
     { type: 'heart', color: '#ff66b2' }
 ];
 
