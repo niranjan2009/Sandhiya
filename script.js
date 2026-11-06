@@ -239,6 +239,7 @@ function buildLoader() {
         }
         setTimeout(() => { clearInterval(heartsTimer); loader.remove(); }, 1800);
     }
+
     btn.addEventListener("click", enterExperience);
 })();
 
@@ -325,7 +326,6 @@ function createPetal() {
 }
 setInterval(createPetal, isSmall ? 900 : 600);
 
-
 /* ============================
    SMART TYPEWRITER EFFECT
 ============================ */
@@ -380,7 +380,6 @@ function typeWriter() {
     }
 }
 
-
 /* ============================
    FINAL MESSAGE & NEXT ARROW
 ============================ */
@@ -429,7 +428,6 @@ setInterval(createHeart, 2500);
 /* =========================================================
    PARTICLE TEXT ANIMATION & FINAL BURST
 ========================================================= */
-
 nextArrow.addEventListener("click", () => {
     document.body.classList.add("particle-mode");
     setTimeout(startParticleAnimation, 1200);
@@ -460,6 +458,7 @@ resize();
 
 const chars = ['♥'];
 const textParticles = [];
+
 let isHeartPhase = false;
 let heartTime = 0;
 let hasBurst = false;
@@ -472,7 +471,7 @@ class TextParticle {
         this.baseTargetY = y;
         this.targetX = x;
         this.targetY = y;
-        this.color = color || '#ffffff';
+        this.color = color || '#ff66b2';
         this.char = chars[Math.floor(Math.random() * chars.length)];
         this.vx = 0;
         this.vy = 0;
@@ -516,6 +515,7 @@ class TextParticle {
         ctx.fillStyle = this.color;
         ctx.fillText(this.char, this.x, this.y);
     }
+}
 
 function getTextPoints(text, fontSize) {
     const offCanvas = document.createElement('canvas');
@@ -644,14 +644,14 @@ canvas.addEventListener("click", () => {
 });
 
 const sequence = [
-    { type: 'text', val: '3', color: '#ff66b2' },    
-    { type: 'text', val: '2', color: '#ff66b2' },    
-    { type: 'text', val: '1', color: '#ff66b2' },    
-    { type: 'text', val: 'I', color: '#ff66b2' },  
-    { type: 'text', val: 'LOVE', color: '#ff66b2' },  
-    { type: 'text', val: 'YOU', color: '#ff66b2' },   
-    { type: 'text', val: 'SANDHIYA', color: '#ff66b2' }, 
-    { type: 'heart', color: '#ff66b2' }
+    { type: 'text', val: '3', color: '#FFD700' },        // Gold
+    { type: 'text', val: '2', color: '#FF8C00' },        // Dark Orange
+    { type: 'text', val: '1', color: '#FF69B4' },        // Hot Pink
+    { type: 'text', val: 'I', color: '#00FFFF' },        // Cyan / Bright Blue
+    { type: 'text', val: 'LOVE', color: '#98FB98' },     // Mint Green
+    { type: 'text', val: 'YOU', color: '#DDA0DD' },      // Plum / Light Purple
+    { type: 'text', val: 'SANDHIYA', color: '#FF3333' }, // Bright Red
+    { type: 'heart', color: '#ff66b2' }                  // Single glowing pink heart
 ];
 
 let currentIndex = 0;
@@ -738,6 +738,7 @@ function animateParticles() {
 
     requestAnimationFrame(animateParticles);
 }
+
 function startParticleAnimation() {
     setTimeout(() => {
         nextSequence();
@@ -789,9 +790,7 @@ btnNo.addEventListener("touchstart", moveNoButton, { passive: false });
 // What happens when she finally clicks YES
 btnYes.addEventListener("click", () => {
     const questionBox = document.getElementById("loveQuestion");
-
     questionBox.innerHTML = `<h2>Love you too ma! ❤️<br> You are my everything!!!</h2>`;
-
     for (let i = 0; i < 20; i++) {
         setTimeout(createHeart, i * 150);
     }
