@@ -700,26 +700,44 @@ function animateParticles() {
         heartTime += 0.08;
 
         if (!hasBurst) {
+            ctx.save();
             ctx.fillStyle = '#ffb3d9';
+            ctx.shadowColor = '#ff66b2';
+            ctx.shadowBlur = 12;
             ctx.font = `bold ${Math.min(26, width / 18)}px Courier New`;
             ctx.textAlign = 'center';
             ctx.fillText("I LOVE YOU SANDHIYA ♥", width / 2, height / 2);
 
             // Low-opacity "(Tap Here)" text inside the heart, just beneath her name
+            ctx.shadowBlur = 0;
             ctx.fillStyle = 'rgba(255, 179, 217, 0.45)';
             ctx.font = '13px Courier New';
             ctx.fillText("(Tap Here)", width / 2, (height / 2) + 30);
+            ctx.restore();
         }
     }
 
+    ctx.save();
     ctx.font = '11px Courier New'; // set once per frame instead of once per particle
+
+    // Single-colour glowing effect (pulses gently with the heartbeat during the heart phase)
+    if (isHeartPhase) {
+        const heartColor = sequence[sequence.length - 1].color || '#ff66b2';
+        ctx.shadowColor = heartColor;
+        ctx.shadowBlur = 16 + Math.sin(heartTime * 2) * 8;
+    } else if (textParticles.length > 0) {
+        ctx.shadowColor = textParticles[0].color;
+        ctx.shadowBlur = 10;
+    }
+
     textParticles.forEach(p => {
         p.update();
         p.draw(ctx);
     });
+    ctx.restore();
+
     requestAnimationFrame(animateParticles);
 }
-
 function startParticleAnimation() {
     setTimeout(() => {
         nextSequence();
