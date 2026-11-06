@@ -512,23 +512,10 @@ class TextParticle {
 
     draw(ctx) {
         if (!this.isActive) return;
-
-        // random start timer so particles don't all blink together
-        if (!this.lastFlash) {
-            this.lastFlash = Date.now() - Math.floor(Math.random() * 200);
-        }
-
-        // new random colour every 200ms (colour string cached = faster on phones)
-        if (!this.fill || Date.now() - this.lastFlash > 200) {
-            this.hue = Math.floor(Math.random() * 360);
-            this.fill = `hsl(${this.hue}, 100%, 60%)`;
-            this.lastFlash = Date.now();
-        }
-
-        ctx.fillStyle = this.fill;
+        // Single solid colour (uses the particle's assigned colour instead of random disco blinking)
+        ctx.fillStyle = this.color;
         ctx.fillText(this.char, this.x, this.y);
     }
-}
 
 function getTextPoints(text, fontSize) {
     const offCanvas = document.createElement('canvas');
